@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ensemble Behavioral Sim V3</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .tooltip { position: relative; display: inline-block; cursor: help; color: var(--cyan); margin-left: 5px; font-weight: bold; }
+        .tooltip .tooltiptext { visibility: hidden; width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 6px; padding: 5px; position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px; opacity: 0; transition: opacity 0.3s; font-weight: normal; font-size: 0.8rem; pointer-events: none; }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+    </style>
+</head>
+<body>
+    <!-- Main Simulation View -->
+    <div class="dashboard">
+        
+        <!-- Top Panel: Network Visualizer -->
+        <div class="visualizer-container">
+            <div class="visualizer">
+                <div class="canvas-legend">
+                    <div class="legend-title">Archetypes</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#3b82f6;"></span> Social Mirror</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#a855f7;"></span> Narrative Captive</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#f59e0b;"></span> Anchored Extrapolator</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#ef4444;"></span> Emotion-Driven</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#14b8a6;"></span> Loss-Aversion</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#10b981;"></span> Prob. Bayesian</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#ec4899;"></span> Strategic Options</div>
+                    <div class="legend-row"><span class="legend-dot" style="background:#64748b;"></span> Credentialist</div>
+                    
+                    <div class="legend-title" style="margin-top:10px;">Actions & State</div>
+                    <div class="legend-row"><span class="legend-pulse"></span> Actively Reskilling</div>
+                    <div class="legend-row"><span class="legend-empty-dot" style="border: 1px solid #fff;"></span> Depleted Skill (Obsolete)</div>
+                </div>
+                <canvas id="sim-canvas"></canvas>
+            </div>
+        </div>
+
+        <div class="bottom-panels">
+            <!-- Left Panel: Controls -->
+            <div class="panel controls">
+                <div class="panel-header">
+                    <h2>Real-Time Chaos Controls</h2>
+                </div>
+                
+                <div class="ablation-group" style="margin-top:20px; border-top: 1px solid var(--panel-border); padding-top: 15px;">
+                    <h3 style="margin-top:0; color:#f59e0b; font-size:1em;">Mechanic Ablations</h3>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-contagion"> Disable Contagion Penalty</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-treadmill"> Disable Skill Treadmill</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-necessity-ent"> Disable Necessity Entrepreneurship</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-financial"> Disable Financial Frictions</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-network"> Disable Network Signals</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-frictional"> Disable Frictional Layoffs</label>
+                    
+                    <h3 style="margin-top:15px; color:#f59e0b; font-size:1em;">Archetype Ablations</h3>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-arch-social"> Disable Social Mirror</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-arch-narrative"> Disable Narrative Captive</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-arch-strategic"> Disable Strategic Options</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-arch-credentialist"> Disable Credentialist</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-arch-emotion"> Disable Emotion-Driven</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-arch-anchored"> Disable Anchored Extrapolator</label>
+                    <label style="display:flex; align-items:center; gap:8px; font-size:0.85em; margin-bottom:5px;"><input type="checkbox" id="ablation-arch-loss"> Disable Loss-Aversion</label>
+                </div>
+
+                
+                <div class="slider-group">
+                    <label for="sim-speed">Simulation Speed <span class="tooltip">ⓘ<span class="tooltiptext">Adjusts the simulation tick rate without altering the UI frame rate.</span></span></label>
+                    <input type="range" id="sim-speed" min="0.5" max="5.0" step="0.5" value="1.0">
+                    <div class="slider-value" id="sim-speed-val">1.0x</div>
+                </div>
+
+                <div class="slider-group" style="border-top: 1px solid var(--panel-border); padding-top: 15px;">
+                    <label for="num-agents">Number of Agents <span class="tooltip">ⓘ<span class="tooltiptext">Takes effect on next Reset or Sweep. Macroeconomic demand scales proportionally.</span></span></label>
+                    <input type="range" id="num-agents" min="50" max="1500" step="50" value="400">
+                    <div class="slider-value" id="num-agents-val">400 Agents</div>
+                </div>
+
+                <div class="slider-group" style="border-top: 1px solid var(--panel-border); padding-top: 15px; margin-top: 15px; display: flex; gap: 10px;">
+                    <button id="play-pause-btn" style="flex: 1; padding: 10px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Pause</button>
+                    <button id="reset-btn" style="flex: 1; padding: 10px; background: #ff003c; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Reset Simulation</button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Outcomes -->
+            <div class="panel outcomes" style="display: flex; flex-direction: column;">
+                <div class="panel-header">
+                    <h2>Archetype Explorer</h2>
+                </div>
+                
+                <!-- Archetype Explorer Content -->
+                <div id="content-explorer" style="display: flex; flex-direction: column; flex-grow: 1; height: 100%; padding: 10px;">
+                    <!-- Archetype Selector -->
+                    <div id="arch-selector" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+                        <!-- Generated by JS -->
+                    </div>
+                    
+
+                    <!-- Secondary Panel: Deep Dive -->
+                    <div style="display: flex; flex-direction: row; gap: 15px; flex: 1;">
+                        <div class="chart-container" style="flex: 1;">
+                            <canvas id="arch-dist-chart"></canvas>
+                        </div>
+                        <div style="flex: 1; background: var(--panel-bg); border: 1px solid var(--panel-border); border-radius: 6px; padding: 10px; font-size: 0.9em; overflow-y: auto;">
+                            <h3 style="margin-top:0; color: #fff; font-size: 1em;">Summary</h3>
+                            <div id="arch-summary" style="color: #ccc; line-height: 1.4;">
+                                Select an archetype to view dynamic insights.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Longitudinal Report Static Panel -->
+        <div class="panel" style="display: flex; flex-direction: column; padding: 20px;">
+            <div class="panel-header" style="margin-bottom: 15px;">
+                <h2>Longitudinal Outcomes Report</h2>
+            </div>
+            <div style="display: flex; flex-direction: row; gap: 20px;">
+                <div style="flex: 1;">
+                    <h3 style="color:#fff; margin-top:0;">Generational Wealth & Outcomes</h3>
+                    <table id="report-table" style="width:100%; text-align:left; border-collapse:collapse; color:#ccc; font-size: 0.9em;">
+                        <thead>
+                            <tr style="border-bottom:1px solid #444;">
+                                <th style="padding:8px;">Archetype</th>
+                                <th style="padding:8px;">Initial Job Type</th>
+                                <th style="padding:8px;">Count</th>
+                                <th style="padding:8px;">Avg Age</th>
+                                <th style="padding:8px;">Avg Unemployed %</th>
+                                <th style="padding:8px;">Structural Disruption %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6" style="padding:8px;">Gathering data... (Refreshes every 20 ticks)</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="color:#fff; margin-top:0;">Current Job Type Origins</h3>
+                    <table id="comp-table" style="width:100%; text-align:left; border-collapse:collapse; color:#ccc; font-size: 0.9em;">
+                        <thead>
+                            <tr style="border-bottom:1px solid #444;">
+                                <th style="padding:8px;">Current Job Type</th>
+                                <th style="padding:8px;">Origin (Initial Job Type)</th>
+                                <th style="padding:8px;">Headcount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="3" style="padding:8px;">Gathering data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Fast-Forward Projection Panel -->
+        <div class="panel" style="display: flex; flex-direction: column; padding: 20px; margin-top: 20px;">
+            <div class="panel-header" style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <h2>Parameter Sweep Projection (10 Minutes)</h2>
+                <button id="run-projection-btn" style="padding: 10px 20px; background: #8b5cf6; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Run Fast-Forward Sweep</button>
+            </div>
+            <div id="projection-loading" style="display: none; color: #f59e0b; margin-bottom: 15px;">Simulating 10 minutes (3,000 ticks) in the background... Please wait (this may take a few seconds).</div>
+            <table id="projection-table" style="width:100%; text-align:left; border-collapse:collapse; color:#ccc; font-size: 0.9em; display: none;">
+                <thead>
+                    <tr style="border-bottom:1px solid #444;">
+                        <th style="padding:8px;">Archetype</th>
+                        <th style="padding:8px;">Initial Job Type</th>
+                        <th style="padding:8px;">Headcount</th>
+                        <th style="padding:8px;">Avg Age</th>
+                        <th style="padding:8px;">Avg Unemployed %</th>
+                        <th style="padding:8px;">Structural Disruption %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>
