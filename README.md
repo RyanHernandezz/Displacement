@@ -4,7 +4,7 @@
 
 Rather than relying on black-box LLMs, this engine uses rigorous **Behavioral Economics** and **Computational Sociology** to model how human irrationality—such as loss aversion, credentialism, and network herding—exacerbates structural unemployment during periods of rapid technological change.
 
-*(Insert Demo GIF or Video Here)*
+![Simulation Demo](demo.gif)
 
 ## 🧠 The Engine: Algorithmic Behavioral Physics
 
